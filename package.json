@@ -1,0 +1,33 @@
+{
+  "name": "aws-s3-with-parts-storage",
+  "version": "0.0.1",
+  "description": "Multer's storage engine with a call to S3 as the substitution piece for file system.",
+  "main": "bin/s3.storage.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/iagocalazans/aws-s3-with-parts-storage.git"
+  },
+  "keywords": [
+    "aws",
+    "s3",
+    "multer",
+    "streams"
+  ],
+  "author": "Iago Calazans <iago.calazans@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/iagocalazans/aws-s3-with-parts-storage/issues"
+  },
+  "homepage": "https://github.com/iagocalazans/aws-s3-with-parts-storage#readme",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.171.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.14",
+    "@types/multer": "^1.4.7",
+    "typescript": "^4.8.3"
+  }
+}
