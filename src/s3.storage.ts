@@ -1,4 +1,5 @@
-import { S3 } from '@aws-sdk/client-s3';
+import { CreateMultipartUploadCommandOutput, S3 } from '@aws-sdk/client-s3';
+import { ResponseMetadata } from '@aws-sdk/client-s3/dist-es/commands'
 
 type UploadInfo = {
   id: string;
@@ -6,12 +7,13 @@ type UploadInfo = {
   size: number | string;
   chunks: number;
   processing: boolean;
+  metadata: ResponseMetadata;
   data: { version: number; city: string; category: string; client: number };
   parts: Array<{ PartNumber: number; ETag: string }>;
 };
 
 class S3WithPartsStorage {
-  private s3 = null;
+  private s3: S3 = null;
 
   constructor({ region, secret, key }) {
     this.s3 = new S3({
@@ -33,15 +35,20 @@ class S3WithPartsStorage {
       filename: file.originalname,
       size: file.size || 0,
       chunks: 0,
+      metadata: null,
       processing: false,
       data: JSON.parse(file.fieldname),
       parts: [],
     };
 
-    const promisePartsList = [];
+    const promisePartsList: Array<Promise<{ 
+      PartNumber: number; 
+      ETag: string 
+    }>> = [];
 
     const cmuco = await this.createHeatmapToStorage(uploadInfo);
     uploadInfo.id = cmuco.UploadId;
+    uploadInfo.metadata = cmuco.$metadata
 
     console.info('Starting upload of %s', file.originalname);
 
@@ -106,7 +113,7 @@ class S3WithPartsStorage {
     });
   }
 
-  async createHeatmapToStorage(info: UploadInfo) {
+  async createHeatmapToStorage(info: UploadInfo): Promise<CreateMultipartUploadCommandOutput> {
     return this.s3.createMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: `main/${info.filename}`,
