@@ -1,6 +1,6 @@
 {
   "name": "aws-s3-with-parts-storage",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Multer's storage engine with a call to S3 as the substitution piece for file system.",
   "main": "bin/s3.storage.js",
   "scripts": {
