@@ -8,7 +8,7 @@ type UploadInfo = {
   chunks: number;
   processing: boolean;
   metadata: ResponseMetadata;
-  data: { version: number; city: string; category: string; client: number };
+  data: { version: number; city: string; category: string; client: number, clientHash: string };
   parts: Array<{ PartNumber: number; ETag: string }>;
 };
 
@@ -114,9 +114,15 @@ class S3WithPartsStorage {
   }
 
   async createHeatmapToStorage(info: UploadInfo): Promise<CreateMultipartUploadCommandOutput> {
+    const folder = ['main']
+
+    if (info.data.clientHash) { 
+      folder[0] = info.data.clientHash
+    }
+    
     return this.s3.createMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `main/${info.filename}`,
+      Key: `${folder}/${info.filename}`,
     });
   }
 
@@ -125,9 +131,15 @@ class S3WithPartsStorage {
     info: UploadInfo,
     partNumber,
   ) {
+    const folder = ['main']
+
+    if (info.data.clientHash) { 
+      folder[0] = info.data.clientHash
+    }
+
     return this.s3.uploadPart({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `main/${info.filename}`,
+      Key: `${folder}/${info.filename}`,
       PartNumber: partNumber,
       UploadId: info.id,
       Body: file,
@@ -135,9 +147,15 @@ class S3WithPartsStorage {
   }
 
   async completeStorageUpload(info: UploadInfo) {
+    const folder = ['main']
+
+    if (info.data.clientHash) { 
+      folder[0] = info.data.clientHash
+    }
+    
     return this.s3.completeMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `main/${info.filename}`,
+      Key: `${folder}/${info.filename}`,
       UploadId: info.id,
       MultipartUpload: {
         Parts: info.parts,
@@ -146,9 +164,15 @@ class S3WithPartsStorage {
   }
 
   async abortStorageUpload(info: UploadInfo) {
+    const folder = ['main']
+
+    if (info.data.clientHash) { 
+      folder[0] = info.data.clientHash
+    }
+
     return this.s3.abortMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `main/${info.filename}`,
+      Key: `${folder}/${info.filename}`,
       UploadId: info.id,
     });
   }
