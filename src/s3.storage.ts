@@ -59,7 +59,7 @@ class S3WithPartsStorage<T = {clientHash: string}> {
     //@ts-ignore
     uploadInfo.filename = `${uploadInfo.data.clientHash ? `${uploadInfo.data.clientHash}/` : ''}${file.originalname}`
 
-    const cmuco = await this.createHeatmapToStorage(uploadInfo);
+    const cmuco = await this.createFileToStorage(uploadInfo);
     uploadInfo.id = cmuco.UploadId;
     uploadInfo.metadata = cmuco.$metadata
 
@@ -89,7 +89,7 @@ class S3WithPartsStorage<T = {clientHash: string}> {
 
       promisePartsList.push(
         new Promise(async (resolve) => {
-          const uploadedResult = await this.uploadHeatmapToStorage(
+          const uploadedResult = await this.uploadFileToStorage(
             chunk,
             uploadInfo,
             actualChunk,
@@ -126,14 +126,14 @@ class S3WithPartsStorage<T = {clientHash: string}> {
     });
   }
 
-  async createHeatmapToStorage(info: UploadInfo<T>): Promise<CreateMultipartUploadCommandOutput> {
+  async createFileToStorage(info: UploadInfo<T>): Promise<CreateMultipartUploadCommandOutput> {
     return this.s3.createMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: `${info.filename}`,
     });
   }
 
-  async uploadHeatmapToStorage(
+  async uploadFileToStorage(
     file: string | Buffer,
     info: UploadInfo<T>,
     partNumber,
