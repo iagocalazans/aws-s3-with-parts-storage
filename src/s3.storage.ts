@@ -1,8 +1,7 @@
 import { CreateMultipartUploadCommandOutput, S3 } from '@aws-sdk/client-s3';
 import { ResponseMetadata } from '@aws-sdk/client-s3/dist-es/commands'
 
-type UploadInfo<T = 
-{ version: number; city: string; category: string; client: number, clientHash: string }> = {
+type UploadInfo<T> = {
   id: string;
   filename: string;
   size: number | string;
@@ -14,7 +13,7 @@ type UploadInfo<T =
 };
 
 
-class S3WithPartsStorage<T> {
+class S3WithPartsStorage<T = {clientHash: string}> {
   private s3: S3 = null;
 
   constructor({ region, secret, key }) {
@@ -57,7 +56,7 @@ class S3WithPartsStorage<T> {
       ETag: string 
     }>> = [];
 
-    // @ts-ignore
+    //@ts-ignore
     uploadInfo.filename = `${uploadInfo.data.clientHash ? `${uploadInfo.data.clientHash}/` : ''}${file.originalname}`
 
     const cmuco = await this.createHeatmapToStorage(uploadInfo);
