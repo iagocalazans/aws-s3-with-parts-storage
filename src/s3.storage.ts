@@ -169,6 +169,6 @@ class S3WithPartsStorage<T> {
   }
 }
 
-export function S3CustomStorage(opts) {
-  return new S3WithPartsStorage(opts);
+export function S3CustomStorage<T>(opts) {
+  return new S3WithPartsStorage<T>(opts);
 }
