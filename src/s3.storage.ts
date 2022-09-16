@@ -1,18 +1,20 @@
 import { CreateMultipartUploadCommandOutput, S3 } from '@aws-sdk/client-s3';
 import { ResponseMetadata } from '@aws-sdk/client-s3/dist-es/commands'
 
-type UploadInfo = {
+type UploadInfo<T = 
+{ version: number; city: string; category: string; client: number, clientHash: string }> = {
   id: string;
   filename: string;
   size: number | string;
   chunks: number;
   processing: boolean;
   metadata: ResponseMetadata;
-  data: { version: number; city: string; category: string; client: number, clientHash: string };
+  data: T;
   parts: Array<{ PartNumber: number; ETag: string }>;
 };
 
-class S3WithPartsStorage {
+
+class S3WithPartsStorage<T> {
   private s3: S3 = null;
 
   constructor({ region, secret, key }) {
@@ -30,14 +32,23 @@ class S3WithPartsStorage {
     file: Express.Multer.File,
     callback: (err: Error, data: any) => void,
   ) {
-    const uploadInfo: UploadInfo = {
+    
+    if (typeof file.fieldname === "string") {
+      try {
+        file.fieldname = JSON.parse(file.fieldname)
+      } catch (err) {
+        file.fieldname = {} as string
+      }
+    }
+
+    const uploadInfo: UploadInfo<T> = {
       id: null,
-      filename: file.originalname,
+      filename: null,
       size: file.size || 0,
       chunks: 0,
       metadata: null,
       processing: false,
-      data: JSON.parse(file.fieldname),
+      data: file.fieldname as unknown as T,
       parts: [],
     };
 
@@ -45,6 +56,9 @@ class S3WithPartsStorage {
       PartNumber: number; 
       ETag: string 
     }>> = [];
+
+    // @ts-ignore
+    uploadInfo.filename = `${uploadInfo.data.clientHash ? `${uploadInfo.data.clientHash}/` : ''}${file.originalname}`
 
     const cmuco = await this.createHeatmapToStorage(uploadInfo);
     uploadInfo.id = cmuco.UploadId;
@@ -113,49 +127,32 @@ class S3WithPartsStorage {
     });
   }
 
-  async createHeatmapToStorage(info: UploadInfo): Promise<CreateMultipartUploadCommandOutput> {
-    const folder = ['main']
-
-    if (info.data.clientHash) { 
-      folder[0] = info.data.clientHash
-    }
-    
+  async createHeatmapToStorage(info: UploadInfo<T>): Promise<CreateMultipartUploadCommandOutput> {
     return this.s3.createMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${folder}/${info.filename}`,
+      Key: `${info.filename}`,
     });
   }
 
   async uploadHeatmapToStorage(
     file: string | Buffer,
-    info: UploadInfo,
+    info: UploadInfo<T>,
     partNumber,
   ) {
-    const folder = ['main']
-
-    if (info.data.clientHash) { 
-      folder[0] = info.data.clientHash
-    }
-
+    
     return this.s3.uploadPart({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${folder}/${info.filename}`,
+      Key: `${info.filename}`,
       PartNumber: partNumber,
       UploadId: info.id,
       Body: file,
     });
   }
 
-  async completeStorageUpload(info: UploadInfo) {
-    const folder = ['main']
-
-    if (info.data.clientHash) { 
-      folder[0] = info.data.clientHash
-    }
-    
+  async completeStorageUpload(info:  UploadInfo<T>) {
     return this.s3.completeMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${folder}/${info.filename}`,
+      Key: `${info.filename}`,
       UploadId: info.id,
       MultipartUpload: {
         Parts: info.parts,
@@ -163,16 +160,10 @@ class S3WithPartsStorage {
     });
   }
 
-  async abortStorageUpload(info: UploadInfo) {
-    const folder = ['main']
-
-    if (info.data.clientHash) { 
-      folder[0] = info.data.clientHash
-    }
-
+  async abortStorageUpload(info:  UploadInfo<T>) {
     return this.s3.abortMultipartUpload({
       Bucket: process.env.AWS_BUCKET_NAME,
-      Key: `${folder}/${info.filename}`,
+      Key: `${info.filename}`,
       UploadId: info.id,
     });
   }
